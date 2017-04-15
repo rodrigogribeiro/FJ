@@ -1,0 +1,17 @@
+-R src FJ
+
+src/Base/Name.v
+src/Base/Notations.v
+src/Base.v
+src/Semantics/AuxiliarDefinitions.v
+src/Semantics/Semantics.v
+src/Syntax/FJSyntax.v
+src/Syntax.v
+src/Tactics/Crush.v
+src/Tactics/LibTactics.v
+src/Tactics/MoreTactics.v
+src/Tactics.v
+src/Typing.v
+src/Typing/Subtyping.v
+src/Typing/TypeRules.v
+src/Typing/ClassTable.v
