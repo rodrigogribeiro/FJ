@@ -114,8 +114,12 @@ VFILES:=src/Base/Name.v\
   src/Tactics.v\
   src/Typing.v\
   src/Typing/Subtyping.v\
+  src/Typing/TyExpInduction.v\
   src/Typing/TypeRules.v\
-  src/Typing/ClassTable.v
+  src/Typing/ClassTable.v\
+  src/Typing/Wellformedness.v\
+  src/Typing/Wellformedness/WellformedExp.v\
+  src/Typing/Wellformedness/WellformedDecls.v
 
 ifneq ($(filter-out archclean clean cleanall printenv,$(MAKECMDGOALS)),)
 -include $(addsuffix .d,$(VFILES))

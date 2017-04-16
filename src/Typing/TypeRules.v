@@ -40,19 +40,19 @@ Section TYPING.
       Forall2 (ExpHasType G) es Cs ->
       Forall2 (Subtype CT) Cs Ds ->
       G |-- (ENew C es) :: C
-  | T_UCast : forall e D C,
+  | T_UCast : forall e D C n,
       G |-- e :: D ->
-      CT |= D <: C ->          
+      BoundedSubtype CT n D C ->          
       G |-- (ECast C e) :: C
-  | T_DCast : forall e D C,
+  | T_DCast : forall e C D n,
       G |-- e :: D    ->
-      CT |= C <: D    ->
+      BoundedSubtype CT n C D ->
       C <> D          ->     
-      G |-- e :: C
-  | T_SCast : forall e D C,      
+      G |-- (ECast C e) :: C
+  | T_SCast : forall e D C n m,      
       G |-- e :: D ->
-      ~ (CT |= D <: C)   ->
-      ~ (CT |= C <: D)   ->
+      ~ (BoundedSubtype CT n D C)   ->
+      ~ (BoundedSubtype CT m C D)   ->
       StupidWarning ->
       G |-- (ECast C e) :: C
   where "G '|--' e '::' C" := (ExpHasType G e C).
@@ -64,10 +64,11 @@ Section TYPING.
 
   Inductive MethodOk : ClassName -> Method -> Prop :=
   | T_Method
-    : forall C D C0 E0 e0 Fs Cs nodupfs K Ms nodupms fargs m nodupfargs,
+    : forall CD C D C0 E0 e0 Fs Cs nodupfs K Ms nodupms fargs m nodupfargs,
       mkGamma ((mkFormalArg this C) :: fargs) |-- e0 :: E0 ->
       Subtype CT E0 C0 ->
-      M.find C CT = Some (mkClassDecl C D Fs nodupfs K Ms nodupms) ->
+      In CD CT ->
+      CD = (mkClassDecl C D Fs nodupfs K Ms nodupms) ->
       map ftype fargs = Cs -> 
       override(CT, m , D, Cs, C0) ->      
       M.find m (to_map Ms) = Some (mkMethod C0 m fargs nodupfargs e0) ->
@@ -77,7 +78,7 @@ Section TYPING.
 
   Inductive ClassOk : ClassDecl -> Prop :=
   | T_Class
-    : forall C D fs K Ms nodupfs nodupms cfargs dfargs fdecl,
+    : forall C CD D fs K Ms nodupfs nodupms cfargs dfargs fdecl,
       K = mkConstructor C
                         (cfargs ++ dfargs)
                         (names cfargs)
@@ -85,7 +86,8 @@ Section TYPING.
       fields CT D fdecl ->
       NoDup (names (fdecl ++ fs)) ->
       Forall (MethodOk C) Ms ->
-      M.find C CT = Some (mkClassDecl C D fs nodupfs K Ms nodupms) ->
+      In CD CT ->
+      CD = (mkClassDecl C D fs nodupfs K Ms nodupms) ->
       ClassOk (mkClassDecl C D fs nodupfs K Ms nodupms).
 
 End TYPING.
@@ -94,3 +96,5 @@ Notation "CT ';' G '|--' e '::' C" := (ExpHasType CT G e C)(at level 58, e at ne
 
 Hint Constructors StupidWarning.
 Hint Constructors ExpHasType.
+
+

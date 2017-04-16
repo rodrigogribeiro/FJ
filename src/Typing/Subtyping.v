@@ -3,14 +3,16 @@ Require Import
         Relations
         FJ.Base
         FJ.Syntax
-        FJ.Tactics
-        FJ.Typing.ClassTable.
+        FJ.Tactics.
 
 (* Definitions of subtyping relation *)
 
 
 Section SUBTYPING.
   Variable CT : ClassTable.
+
+  Definition ClassTableFiniteMap (CT : ClassTable) :=
+    forall CD CD1, In CD CT -> In CD1 CT -> get_name CD = get_name CD1 -> CD = CD1.
   
   Variable CTisFM : ClassTableFiniteMap CT.
   
@@ -102,3 +104,5 @@ Section SUBTYPING.
       exists* (1 + m).
   Qed.
 End SUBTYPING.
+
+Notation "CT '|=' C '<:' D" := (Subtype CT C D)(at level 60, C at next level).

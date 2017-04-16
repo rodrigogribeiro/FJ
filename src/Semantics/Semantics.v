@@ -31,8 +31,8 @@ Section SEMANTICS.
       NoDup (this :: xs)          ->
       List.length ds = List.length xs ->
       EMethodInvoc (ENew C es) m ds ~~> [| ENew C es :: ds \ this :: xs |] e
-  | XCast : forall C D es,
-      Subtype CT C D ->
+  | XCast : forall C D es n,
+      BoundedSubtype CT n C D ->
       Forall Value es ->      
       ECast D (ENew C es) ~~> ENew C es
   where "e '~~>' e1" := (EStep e e1).

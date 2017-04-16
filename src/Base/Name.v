@@ -1,6 +1,7 @@
 Require Import
         Arith_base
         List
+        FJ.Base.Environment
         FJ.Base.Notations
         FJ.Tactics.
 
@@ -42,6 +43,9 @@ Definition find {A : Type}{N : Nameable A} : forall (n : Name)(ls : list A),
     intros y H ; crush.
     eapply n1 ; crush ; auto.
 Defined.
+
+Definition to_map {A : Type}{N : Nameable A}(xs : list A) : Map A :=
+  fold_right (fun v ac => M.add (get_name v) v ac) (M.empty _) xs.
 
 (* Coq do not have a zipWith... *)
 

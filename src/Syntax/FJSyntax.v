@@ -16,8 +16,8 @@ Inductive Exp : Set :=
 | EVar         : Name -> Exp                        (* variables *)
 | EFieldAccess : Exp -> Name -> Exp                 (* field access *)
 | EMethodInvoc : Exp -> Name -> list Exp -> Exp     (* method invocation *)
-| ECast        : Name -> Exp -> Exp                 (* cast *)
-| ENew         : Name -> list Exp -> Exp.           (* object creation *)
+| ECast        : ClassName -> Exp -> Exp            (* cast *)
+| ENew         : ClassName -> list Exp -> Exp.      (* object creation *)
 
 (* formal arguments *)
 
