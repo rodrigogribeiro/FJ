@@ -1,6 +1,7 @@
 Require Import
         FJ.Base
-	FJ.Syntax. 
+	FJ.Syntax
+        FJ.Tactics. 
 
 
 Inductive WellFormedExp (CT : ClassTable) : Exp -> Prop :=
@@ -83,3 +84,47 @@ Definition WellFormedExpInd :=
                                                         (list_Forall_ind Hes)
                 end) es Hes)
        end.
+
+Definition WellFormedExpDec (CT : ClassTable)
+  : forall e, {WellFormedExp CT e} + {~ WellFormedExp CT e}.
+  refine (fix wfexp e : {WellFormedExp CT e} + {~ WellFormedExp CT e} :=
+            match e as e' return e = e' -> {WellFormedExp CT e'} + {~ WellFormedExp CT e'} with
+            | EVar n => fun _ => Yes
+            | EFieldAccess e n => fun _ =>
+                match wfexp e with
+                | Yes => Yes
+                | No  => No           
+                end
+            | EMethodInvoc e n es => fun _ =>
+              match wfexp e with
+              | Yes =>
+                match Forall_dec wfexp es with
+                | Yes => Yes
+                | No  => No           
+                end  
+              | No  => No           
+              end
+            | ECast C e => fun _ => 
+              match find C CT with
+              | !! => No
+              | [|| CD ||] =>
+                match wfexp e with
+                | Yes => Yes
+                | No  => No           
+                end
+              end
+            | ENew C es => fun _ => 
+              match find C CT with
+              | !! => No
+              | [|| CD ||] =>
+                match Forall_dec wfexp es with
+                | Yes => Yes
+                | No  => No           
+                end                
+              end
+            end (eq_refl e)) ; clear wfexp ; substs* ; try solve [intro H ; inverts* H].
+  +
+    destruct* a.
+  +
+    destruct* a.
+Defined.    

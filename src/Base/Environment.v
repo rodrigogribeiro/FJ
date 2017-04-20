@@ -8,6 +8,7 @@ Require Export
 
 Module M := FMapAVL.Make (Nat_as_OT).
 Module P := WProperties_fun Nat_as_OT M.
+Module F := P.F.
 
 Definition Map := M.t.
 

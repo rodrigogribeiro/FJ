@@ -1,4 +1,5 @@
 Require Import
+        Arith_base
         List
         FJ.Base
         FJ.Tactics.

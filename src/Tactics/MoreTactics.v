@@ -13,6 +13,7 @@ Ltac s :=
     destruct (eq_nat_dec a b) ; subst ; try congruence
   | [H : context[eq_nat_dec ?a ?b] |- _] =>
     destruct (eq_nat_dec a b) ; subst ; try congruence
+  | [H : _ /\ _ |- _] => destruct* H                                          
   end.
 
 Ltac simp := repeat (simpl ; s) ; crush.

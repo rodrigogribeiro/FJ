@@ -103,10 +103,14 @@ endif
 
 VFILES:=src/Base/Name.v\
   src/Base/Notations.v\
+  src/Base/Environment.v\
+  src/Base/ListExtras.v\
   src/Base.v\
   src/Semantics/AuxiliarDefinitions.v\
   src/Semantics/Semantics.v\
   src/Syntax/FJSyntax.v\
+  src/Syntax/SyntaxInduction.v\
+  src/Syntax/Induction/ExpInduction.v\
   src/Syntax.v\
   src/Tactics/Crush.v\
   src/Tactics/LibTactics.v\

@@ -104,5 +104,3 @@ Section SUBTYPING.
       exists* (1 + m).
   Qed.
 End SUBTYPING.
-
-Notation "CT '|=' C '<:' D" := (Subtype CT C D)(at level 60, C at next level).

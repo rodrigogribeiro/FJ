@@ -1,5 +1,7 @@
 Require Import
         List
+        ListDec
+        FJ.Base
         FJ.Syntax
         FJ.Tactics.
 
@@ -11,16 +13,16 @@ Section Definitions.
 
   Variable CT : ClassTable.
   
-  Inductive fields : ClassName -> list Field -> Prop :=
-  | F_Obj : fields Object nil
-  | F_Cls : forall C D CD fs fsnodup K ms msnodup fs' ,
-      CD = (mkClassDecl C D fs fsnodup K ms msnodup) ->
+  Inductive fields : nat -> ClassName -> list Field -> Prop :=
+  | F_Obj : fields 0 Object nil
+  | F_Cls : forall C D CD fs fs' n,
+      fs = cfields CD                                ->
       In CD CT                                       ->
       C = get_name CD                                ->
-      fields D fs'                                   ->
-      NoDup (names (fs' ++ fs))                      -> 
-      fields C (fs' ++ fs).
-
+      fields n D fs'                                 ->
+      NoDup (names (fs ++ fs'))                      -> 
+      fields (1 + n) C (fs ++ fs').
+    
   (* method type lookup *)
 
   Reserved Notation "'mtype(' M ',' C ')' '=' Cs '~>' C1" (at level 40, Cs at next level).
@@ -122,3 +124,57 @@ Notation "'override(' CT ',' M ',' C ',' Cs ',' D ')'" := (valid_override CT M C
                                                             (at level 40).
 
 Notation " '[|' ds '\' xs '|]' e " := (substitution e ds xs) (at level 30).
+
+Section DEC.
+
+  Lemma fieldsDeterministic
+     : forall n CT C fs, fields CT n C fs -> forall fs', fields CT n C fs' -> fs = fs'.
+  Proof.
+    induction n ; intros.
+    +
+      inverts H ; inverts* H0.
+    +
+      inverts* H ; inverts* H0.
+      eapply IHn ; eauto.
+      eapply F_Cls.
+  Qed.
+  
+  Definition fieldsDec : forall n CT C,
+    {fs | fields CT n C fs} + {forall fs, ~ fields CT n C fs}.
+    refine (fix F n CT C : {fs | fields CT n C fs} +
+                           {forall fs, ~ fields CT n C fs} :=
+            match n as n'
+                  return n = n' -> {fs | fields CT n C fs} +
+                                   {forall fs, ~ fields CT n C fs} with
+            | 0    => fun _ =>
+               match eq_nat_dec C Object with
+               | Yes => [|| nil ||]
+               | No  => !!           
+               end           
+            | S n1 => fun _ =>
+               match find C CT with
+               | !! => !!
+               | [|| CD ||] =>
+                 match find (cextends CD) CT with
+                 | !! => !!
+                 | [|| DD ||] =>
+                   match F n1 CT (cname DD) with
+                   | !! => !!
+                   | [|| fs' ||] =>
+                     match NoDupDec eq_nat_dec (names (cfields CD ++ fs')) with
+                     | Yes => [|| cfields CD ++ fs' ||]
+                     | No  => !!           
+                     end
+                   end
+                 end
+               end           
+            end (eq_refl n)) ; clear F ; simpl in * ; substs ;
+            try solve [intros ; intro H ; inverts* H] ; eauto ; intros ; try intro.
+    +
+      destruct* a.
+    +
+      destruct* a.
+      destruct* a0.
+      inverts* H.
+      
+End DEC.
