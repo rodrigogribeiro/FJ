@@ -33,28 +33,3 @@ Definition list_eq_dec
     right ; intro H ; inverts* H.
     right ; intro H ; inverts* H.
 Defined.
-
-
-(* no dup decidable *)
-
-Hint Constructors NoDup.
-
-Definition NoDupDec
-           {A : Type}
-           (Adec : forall (x y : A), {x = y} + {x <> y}) :
-  forall (xs : list A), {NoDup xs} + {~ NoDup xs}.
-  refine (fix F xs :=
-            match xs as xs' return xs = xs' -> {NoDup xs} + {~ NoDup xs} with
-            | nil => fun _ => Yes
-            | x :: xs =>
-              match In_dec Adec x xs with
-              | Yes => fun _ => No
-              | No  => fun _ => 
-                match F xs with
-                | Yes => Yes
-                | No  => No           
-                end
-              end
-            end (eq_refl xs)) ; clear F ; substs* ;
-    try solve [intro H ; inverts* H ] ; eauto.
-Defined.  

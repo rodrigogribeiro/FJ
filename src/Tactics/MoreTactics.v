@@ -2,6 +2,7 @@
 
 Require Import
         Arith_base
+        FJ.Base.Environment
         FJ.Tactics.Crush
         FJ.Tactics.LibTactics.
 
@@ -17,3 +18,11 @@ Ltac s :=
   end.
 
 Ltac simp := repeat (simpl ; s) ; crush.
+
+Ltac map_solver :=
+  repeat (match goal with
+          | [H : M.MapsTo ?C ?CD ?CT, H2 : M.MapsTo ?C ?CD1 ?CT |- _] =>
+            apply (F.MapsTo_fun H) in H2 ; substs
+          | [H : ~ M.In ?C ?CS, H2 : M.MapsTo ?C ?D ?CS |- _] =>
+            apply F.not_find_in_iff in H ; apply F.find_mapsto_iff in H2 ; crush
+          end).

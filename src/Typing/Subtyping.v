@@ -10,36 +10,27 @@ Require Import
 
 Section SUBTYPING.
   Variable CT : ClassTable.
-
-  Definition ClassTableFiniteMap (CT : ClassTable) :=
-    forall CD CD1, In CD CT -> In CD1 CT -> get_name CD = get_name CD1 -> CD = CD1.
-  
-  Variable CTisFM : ClassTableFiniteMap CT.
   
   Inductive BoundedSubtype : nat -> ClassName -> ClassName -> Prop :=
   | BRefl  : forall C, BoundedSubtype 0 C C
-  | BStep : forall C CD D E n,
-      In CD CT        ->
-      C = get_name CD ->
-      D = cextends CD ->
-      BoundedSubtype n D E   ->
+  | BStep : forall C CD E n,
+      M.MapsTo C CD CT ->
+      BoundedSubtype n (cextends CD) E   ->
       BoundedSubtype (1 + n) C E.
 
   Hint Constructors BoundedSubtype.
 
   Lemma BoundedSubtypeNoStep
     : forall C CD D E n,
-      In CD CT ->
+      M.MapsTo C CD CT ->
       C = get_name CD ->
       D = cextends CD ->
       ~ BoundedSubtype n D E ->
       ~ BoundedSubtype (1 + n) C E.
   Proof.
     intros ; intro.
-    inverts* H3.
-    unfold ClassTableFiniteMap in CTisFM.
-    apply (CTisFM _ _ H H5) in H4.
-    substs*.
+    inverts* H3 ; try map_solver.
+    crush.
   Qed.
   
   Hint Resolve BoundedSubtypeNoStep.
@@ -53,7 +44,7 @@ Section SUBTYPING.
                   | No  => No           
                   end       
               | S n' => fun Heq =>
-                  match find C CT with
+                  match MapsToDec C CT with
                   | [|| CD ||]  =>
                     match subdec n' (cextends CD) D with
                     | Yes => Yes
@@ -66,11 +57,7 @@ Section SUBTYPING.
                simpl in * ;
                substs ;
                eauto  ;
-               try solve [ intro H ; inverts* H ].
-    +
-      destruct* a.
-    +
-      destruct* a ; eapply BoundedSubtypeNoStep ; eauto.
+               try (intro H ; inverts* H) ; try map_solver ; eauto.
   Defined.
 
   (* subtyping relation *)
@@ -79,11 +66,9 @@ Section SUBTYPING.
   
   Inductive Subtype : ClassName -> ClassName -> Prop :=
   | SRefl : forall C, C <: C
-  | SStep : forall C CD D E,                           
-      In CD CT ->
-      C = get_name CD ->
-      D = cextends CD ->
-      D <: E  ->
+  | SStep : forall C CD E,                           
+      M.MapsTo C CD CT ->
+      (cextends CD) <: E  ->
       C <: E
   where "C '<:' D" := (Subtype C D).
 

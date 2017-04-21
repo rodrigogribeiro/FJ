@@ -13,43 +13,37 @@ Section WF.
 
   Inductive WellFormedFormalArg : FormalArg -> Prop :=
     WFFormalArg
-    : forall n C CD, C = get_name CD ->
-                     In CD CT ->
+    : forall n C CD, M.MapsTo C CD CT ->
                      WellFormedFormalArg (mkFormalArg n C).
         
   Inductive WellFormedField : Field -> Prop :=
     WFField
-    : forall n C CD, C = get_name CD ->
-                     In CD CT ->
+    : forall n C CD, M.MapsTo C CD CT ->
                      WellFormedField (mkField n C).
   
   Inductive WellFormedConstructor : Constructor -> Prop :=
     WFConstructor
     : forall C args sups inis CD,
-      C = get_name CD ->
-      In CD CT ->
+      M.MapsTo C CD CT ->
       Forall WellFormedFormalArg args ->
       WellFormedConstructor (mkConstructor C args sups inis).
   
   Inductive WellFormedMethod : Method -> Prop :=
     WFMethod
     : forall C m args nodup e CD,
-      C = get_name CD ->
-      In CD CT -> 
+      M.MapsTo C CD CT ->
       Forall WellFormedFormalArg args ->
       WellFormedExp CT e ->
       WellFormedMethod (mkMethod C m args nodup e).
   
   Inductive WellFormedClass : ClassDecl -> Prop :=
-    WFClass : forall C D fs nodupfs K ms nodupms CD DD,
-      C = get_name CD ->
-      D = get_name DD ->
-      In CD CT ->
-      In DD CT ->
+    WFClass : forall C D fs K ms CD DD,
+      M.MapsTo C CD CT ->
+      M.MapsTo D DD CT -> 
       Forall WellFormedField fs ->
       WellFormedConstructor K ->
       Forall WellFormedMethod ms ->
-      WellFormedClass (mkClassDecl C D fs nodupfs K ms nodupms).
+      WellFormedClass (mkClassDecl C D (to_map fs) K (to_map ms)).
 End WF.
 
   Hint Constructors
@@ -67,14 +61,13 @@ Section DEC.
     refine (fun fa =>
                match fa return {WellFormedFormalArg CT fa} + {~ WellFormedFormalArg CT fa} with
                | mkFormalArg n C =>
-                 match find C CT with
+                 match MapsToDec C CT with
                  | !! => No
                  | [|| CD ||] => Yes          
                  end  
                end).
-    simpl in * ; destruct a ; eauto.
-    intro H ; inverts H.
-    apply n0 in H3 ; crush.
+    simpl in * ; eauto.
+    intro H ; inverts H ; try map_solver.
   Defined.  
 
   Definition WellFormedFieldDec 
@@ -82,14 +75,11 @@ Section DEC.
     refine (fun fa =>
                match fa return {WellFormedField CT fa} + {~ WellFormedField CT fa} with
                | mkField n C =>
-                 match find C CT with
+                 match MapsToDec C CT with
                  | !! => No
                  | [|| CD ||] => Yes          
                  end  
-               end).
-    simpl in * ; destruct a ; eauto.
-    intro H ; inverts H.
-    apply n0 in H3 ; crush.
+               end) ; simpl in * ; eauto ; try (intro H ; inverts* H) ; try map_solver.
   Defined.  
 
   Definition WellFormedConstructorDec
@@ -97,7 +87,7 @@ Section DEC.
     refine (fun K =>
               match K return {WellFormedConstructor CT K} + {~ WellFormedConstructor CT K} with
               | mkConstructor C args sups inis =>
-                match find C CT with
+                match MapsToDec C CT with
                 | [|| CD ||] =>
                   match Forall_dec WellFormedFormalArgDec args with
                   | Yes => Yes
@@ -105,10 +95,7 @@ Section DEC.
                   end
                 | !! => No    
                 end
-              end) ; simpl in * ; eauto.
-    destruct* a.
-    intro H ; inverts H ; contradiction.
-    intro H ; inverts H. apply n in H5 ; crush.
+              end) ; simpl in * ; eauto ; try (intro H ; inverts* H) ; try map_solver.
   Defined.
 
   Definition WellFormedMethodDec
@@ -116,7 +103,7 @@ Section DEC.
     refine (fun M =>
               match M return {WellFormedMethod CT M} + {~ WellFormedMethod CT M} with
               | mkMethod C m args nodup e =>
-                match find C CT with
+                match MapsToDec C CT with
                 | !! => No
                 | [|| CD ||] =>
                   match Forall_dec WellFormedFormalArgDec args with
@@ -128,31 +115,27 @@ Section DEC.
                     end  
                   end
                 end
-              end).
-    destruct* a.
-    intro H ; inverts H ; contradiction.
-    intro H ; inverts H ; contradiction.
-    intro H ; inverts H. apply n in H5 ; crush.
+              end) ; simpl in * ; try (intro H ; inverts H) ; try map_solver ; eauto.
   Defined.
 
   Definition WellFormedClassDec
     : forall CD, {WellFormedClass CT CD} + {~ WellFormedClass CT CD}.
     refine (fun CD =>
               match CD return {WellFormedClass CT CD} + {~ WellFormedClass CT CD} with
-              | mkClassDecl C D fs nodupfs K ms nodupms =>
-                match find C CT with
+              | mkClassDecl C D fs K ms =>
+                match MapsToDec C CT with
                 | !! => No
                 | [|| CD1 ||] =>
-                  match find D CT with
+                  match MapsToDec D CT with
                   | !! => No
                   | [|| DD ||] =>
-                    match Forall_dec WellFormedFieldDec fs with
+                    match Forall_dec WellFormedFieldDec (values fs) with
                     | No => No
                     | Yes =>
                       match WellFormedConstructorDec K with
                       | No => No
                       | Yes =>
-                        match Forall_dec WellFormedMethodDec ms with
+                        match Forall_dec WellFormedMethodDec (values ms) with
                         | Yes => Yes
                         | No  => No           
                         end
@@ -160,11 +143,7 @@ Section DEC.
                     end
                   end
                 end
-              end) ; try solve [intro H ; inverts H ; contradiction].
-    destruct* a.
-    destruct* a0.
-    intro H ; inverts H. apply n in H8 ; crush.
-    intro H ; inverts H. apply n in H7 ; crush.
+              end) ; simpl in * ; try (intro H ; inverts* H) ; eauto ; try map_solver.
   Defined.
 
 End DEC.  

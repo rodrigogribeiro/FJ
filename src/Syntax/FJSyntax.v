@@ -82,11 +82,9 @@ Instance MethodName : Nameable Method :={
 Record ClassDecl := mkClassDecl {
    cname         : Name ;                  
    cextends      : ClassName ;
-   cfields       : list Field ;
-   cfieldsnodup  : NoDup cfields ;
+   cfields       : Map Field ;
    cconstructor  : Constructor ;
-   cmethods      : list Method ;
-   cmethodsnodup : NoDup cmethods ;
+   cmethods      : Map Method ;
 }.        
 
 Instance ClassDeclName : Nameable ClassDecl :={
@@ -95,10 +93,9 @@ Instance ClassDeclName : Nameable ClassDecl :={
 
 (* Programs *)
 
-Definition ClassTable := list ClassDecl.
+Definition ClassTable := Map ClassDecl.
 
 Record Program := mkProgram {
-   pclasses      : ClassTable ;
-   pnodupclasses : NoDup pclasses ;                   
+   pclasses      : ClassTable ;                
    pmain         : Exp ;
 }.

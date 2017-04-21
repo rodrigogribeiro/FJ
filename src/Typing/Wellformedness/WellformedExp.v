@@ -19,13 +19,11 @@ Inductive WellFormedExp (CT : ClassTable) : Exp -> Prop :=
 | WFCast
   : forall e C CD,
     WellFormedExp CT e ->
-    C = get_name CD ->
-    In CD CT        ->
+    M.MapsTo C CD CT   ->
     WellFormedExp CT (ECast C e)
 | WFNew
   : forall C es CD,
-    C = get_name CD    ->
-    In CD CT           ->
+    M.MapsTo C CD CT ->
     Forall (WellFormedExp CT) es ->
     WellFormedExp CT (ENew C es).
 
@@ -49,12 +47,10 @@ Definition WellFormedExpInd :=
       (f4 : forall e C CD,
           WellFormedExp CT e ->
           P e ->
-          C = get_name CD ->
-          In CD CT ->
+          M.MapsTo C CD CT ->
           P (ECast C e))
       (f5 : forall C es CD,
-          C = get_name CD ->
-          In CD CT ->
+          M.MapsTo C CD CT ->
           Forall (WellFormedExp CT) es ->
           Forall P es ->
           P (ENew C es)) =>
@@ -72,10 +68,10 @@ Definition WellFormedExpInd :=
                 | Forall_cons e He Hes => Forall_cons e (F e He)
                                                         (list_Forall_ind Hes)
                 end) es Hes)
-       | WFCast _ e C CD He Heq HIn =>
-         f4 e C CD He (F e He) Heq HIn
-       | WFNew _ C es CD Heq HIn Hes =>
-         f5 C es CD Heq HIn Hes
+       | WFCast _ e C CD He HIn =>
+         f4 e C CD He (F e He) HIn
+       | WFNew _ C es CD HIn Hes =>
+         f5 C es CD HIn Hes
             ((fix list_Forall_ind {es' : list Exp}
                   (prf : Forall (WellFormedExp CT) es') : Forall P es' :=
                 match prf with
@@ -105,7 +101,7 @@ Definition WellFormedExpDec (CT : ClassTable)
               | No  => No           
               end
             | ECast C e => fun _ => 
-              match find C CT with
+              match MapsToDec C CT with
               | !! => No
               | [|| CD ||] =>
                 match wfexp e with
@@ -114,7 +110,7 @@ Definition WellFormedExpDec (CT : ClassTable)
                 end
               end
             | ENew C es => fun _ => 
-              match find C CT with
+              match MapsToDec C CT with
               | !! => No
               | [|| CD ||] =>
                 match Forall_dec wfexp es with
@@ -122,9 +118,5 @@ Definition WellFormedExpDec (CT : ClassTable)
                 | No  => No           
                 end                
               end
-            end (eq_refl e)) ; clear wfexp ; substs* ; try solve [intro H ; inverts* H].
-  +
-    destruct* a.
-  +
-    destruct* a.
+            end (eq_refl e)) ; clear wfexp ; substs* ; try (intro H ; inverts* H) ; try map_solver.
 Defined.    

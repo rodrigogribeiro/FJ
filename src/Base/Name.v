@@ -15,34 +15,7 @@ Class Nameable (A : Type) :={
   get_name : A -> Name ;
 }.
 
-Definition names {A : Type}{N : Nameable A}(ls : list A) := List.map get_name ls.
-
-Definition find {A : Type}{N : Nameable A} : forall (n : Name)(ls : list A),
-   { x : A | n = get_name x /\ In x ls} + {forall y : A, List.In y ls -> n <> get_name y}.
-  refine (fix find n ls : { x : A | n = get_name x /\ In x ls} +
-                          {forall y : A, List.In y ls -> n <> get_name y} :=
-            match ls with
-            | nil => !!
-            | x :: xs =>
-              match eq_nat_dec n (get_name x) with
-              | left _ _ => [|| x ||]
-              | right _ _ =>
-                match find n xs with
-                | [|| x ||] => [|| x ||]
-                | !! => !!                 
-                end
-              end
-            end).
-  +
-    intros y H ; simpl in * ; crush.
-  +
-    splits* ; simpl ; left*.
-  +
-    simpl in * ; crush.
-  +
-    intros y H ; crush.
-    eapply n1 ; crush ; auto.
-Defined.
+Definition names {A : Type}{N : Nameable A}(m : list A) := List.map get_name m.
 
 Definition to_map {A : Type}{N : Nameable A}(xs : list A) : Map A :=
   fold_right (fun v ac => M.add (get_name v) v ac) (M.empty _) xs.

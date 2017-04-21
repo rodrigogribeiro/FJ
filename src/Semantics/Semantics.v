@@ -20,14 +20,14 @@ Section SEMANTICS.
   Reserved Notation "e '~~>' e1" (at level 80).
 
   Inductive EStep : Exp -> Exp -> Prop :=
-  | XField : forall C fs es fi ei i,
-      fields CT C fs           ->
+  | XField : forall C fs es fi ei i n,
+      fields CT n C fs         ->
       Forall Value es          ->
-      nth_error fs i = Some fi ->
+      nth_error (values fs) i = Some fi ->
       nth_error es i = Some ei ->
       EFieldAccess (ENew C es) (get_name fi) ~~> ei
-  | XInvoc : forall C m xs ds es e,
-      mbody(CT,m,C) = xs ; e      ->
+  | XInvoc : forall C m xs ds es e n,
+      m_body_lookup CT n m C xs e   ->
       NoDup (this :: xs)          ->
       List.length ds = List.length xs ->
       EMethodInvoc (ENew C es) m ds ~~> [| ENew C es :: ds \ this :: xs |] e
