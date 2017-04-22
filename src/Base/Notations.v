@@ -1,5 +1,7 @@
 (* Notations for easy dependently typed programming --- these are defined in CPDT book*)
 
+Set Implicit Arguments.
+
 (* notations for subset types -- sig types *)
 
 Notation "!" := (False_rec _ _).
@@ -24,4 +26,14 @@ Notation "x <-- e1 ; e2" := (match e1 with
                              (right associativity, at level 60).
 
 Notation "e1 ;;; e2" := (if e1 then e2 else !!)
-                        (right associativity, at level 60).
+                          (right associativity, at level 60).
+
+(* partial subset types *)
+
+Inductive Maybe (A : Set) (P : A -> Prop) : Set :=
+| Unknown : Maybe P
+| Found : forall x : A, P x -> Maybe P.
+
+Notation "{{ x | P }}" := (Maybe (fun x => P)).
+Notation "??" := (Unknown _).
+Notation "[| x |]" := (Found _ x _).

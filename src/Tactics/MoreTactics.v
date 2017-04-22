@@ -25,4 +25,6 @@ Ltac map_solver :=
             apply (F.MapsTo_fun H) in H2 ; substs
           | [H : ~ M.In ?C ?CS, H2 : M.MapsTo ?C ?D ?CS |- _] =>
             apply F.not_find_in_iff in H ; apply F.find_mapsto_iff in H2 ; crush
+          | [H : M.MapsTo _ _ (M.empty _) |- _] =>
+            apply F.empty_mapsto_iff in H ; crush
           end).

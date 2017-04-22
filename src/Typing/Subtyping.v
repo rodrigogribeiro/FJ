@@ -79,6 +79,15 @@ Section SUBTYPING.
     intros n C D H ; induction H ; eauto.
   Qed.
 
+  Theorem BoundedSubtypeForall2
+    : forall n Cs Ds, length Cs = length Ds ->
+                      Forall2 (BoundedSubtype n) Cs Ds ->
+                      Forall2 Subtype Cs Ds.
+  Proof.
+    Hint Resolve BoundedSubtypeSound.
+    intros n Cs Ds Hl Hf ; induction Hf ; eauto.
+  Qed.  
+
   Theorem BoundedSubtypeComplete : forall C D, C <: D -> exists n, BoundedSubtype n C D.
   Proof.
     intros C D H ; induction H.
@@ -91,3 +100,5 @@ Section SUBTYPING.
 End SUBTYPING.
 
 Notation "CT '|=' C '<:' D" := (Subtype CT C D)(at level 10, C at level 69).
+
+Hint Resolve BoundedSubtypeForall2.

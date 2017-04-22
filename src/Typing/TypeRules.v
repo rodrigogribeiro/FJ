@@ -3,7 +3,8 @@ Require Import
         FJ.Base
         FJ.Semantics.AuxiliarDefinitions
         FJ.Syntax
-        FJ.Typing.Subtyping.
+        FJ.Typing.Subtyping
+        FJ.Tactics.
 
 (* type rules for expressions *)
 
