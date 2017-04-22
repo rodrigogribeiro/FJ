@@ -13,7 +13,8 @@ Module F := P.F.
 
 Definition Map := M.t.
 
-Definition keys {A : Type}(m : Map A) := M.fold (fun k _ ac => k :: ac) m nil.
+Definition keys {A : Type}(m : Map A) :=
+ M.fold (fun k _ ac => k :: ac) m nil.
 
 Definition values {A : Type}(m : Map A) := M.fold (fun _ v ac => v :: ac) m nil.
 

@@ -19,24 +19,22 @@ Section TYPING.
 
   Inductive ExpHasType (G : Gamma) : Exp -> ClassName -> Prop :=
   | T_Var : forall v C,
-      M.find v G = Some C ->
+      M.MapsTo v C G ->
       G |-- (EVar v) :: C
-  | T_Field : forall e C fs i fd Ci fi,
+  | T_Field : forall e C fs fd fi n,
       G |-- e :: C ->
-      fields CT C fs  ->
-      nth_error fs i = Some fd ->
-      Ci = fdtype fd ->
-      fi = get_name fd ->
-      G |-- (EFieldAccess e fi) :: Ci
-  | T_Invoc : forall e C Cs C0 Ds es m,
+      fields CT n C fs  ->
+      M.MapsTo fi fd fs ->
+      G |-- (EFieldAccess e fi) :: (fdtype fd)
+  | T_Invoc : forall e C Cs C0 Ds es m n,
       G |-- e :: C0 ->
-      m_type_lookup CT m C0 Ds C ->
+      m_type_lookup CT n m C0 Ds C ->
       Forall2 (ExpHasType G) es Cs ->
       Forall2 (Subtype CT) Cs Ds ->
       G |-- EMethodInvoc e m es :: C
-  | T_New : forall C Ds Cs fs es,
-      fields CT C fs ->
-      Ds = map fdtype fs ->
+  | T_New : forall C Ds Cs fs es n,
+      fields CT n C fs ->
+      Ds = map fdtype (values fs) ->
       Forall2 (ExpHasType G) es Cs ->
       Forall2 (Subtype CT) Cs Ds ->
       G |-- (ENew C es) :: C
@@ -64,31 +62,32 @@ Section TYPING.
 
   Inductive MethodOk : ClassName -> Method -> Prop :=
   | T_Method
-    : forall CD C D C0 E0 e0 Fs Cs nodupfs K Ms nodupms fargs m nodupfargs,
+    : forall CD C C0 E0 e0 MD m Cs fargs,
+      M.MapsTo C CD CT ->
+      M.MapsTo m MD (cmethods CD) ->      
+      fargs = margs MD ->
+      map ftype fargs = Cs ->       
       mkGamma ((mkFormalArg this C) :: fargs) |-- e0 :: E0 ->
       Subtype CT E0 C0 ->
-      In CD CT ->
-      CD = (mkClassDecl C D Fs nodupfs K Ms nodupms) ->
-      map ftype fargs = Cs -> 
-      override(CT, m , D, Cs, C0) ->      
-      M.find m (to_map Ms) = Some (mkMethod C0 m fargs nodupfargs e0) ->
-      MethodOk C (mkMethod C0 m fargs nodupfargs e0).
+      valid_override CT m (cextends CD) Cs C0 ->      
+      MethodOk C MD.
 
   (* class typing *)
 
   Inductive ClassOk : ClassDecl -> Prop :=
   | T_Class
-    : forall C CD D fs K Ms nodupfs nodupms cfargs dfargs fdecl,
-      K = mkConstructor C
-                        (cfargs ++ dfargs)
-                        (names cfargs)
-                        (map (mkInitializer this) (names fs)) ->
-      fields CT D fdecl ->
-      NoDup (names (fdecl ++ fs)) ->
-      Forall (MethodOk C) Ms ->
-      In CD CT ->
-      CD = (mkClassDecl C D fs nodupfs K Ms nodupms) ->
-      ClassOk (mkClassDecl C D fs nodupfs K Ms nodupms).
+    : forall C CD D n dfds ms K dargs cargs inis dnames fs,
+      M.MapsTo C CD CT ->
+      CD = mkClassDecl C D fs K ms ->
+      fields CT n D dfds ->
+      Forall (MethodOk C) (values ms) ->
+      dnames = map fdname (values dfds) ->
+      dargs  = map (fun fd => mkFormalArg (fdname fd) (fdtype fd)) (values dfds) ->
+      cargs  = map (fun fd => mkFormalArg (fdname fd) (fdtype fd)) (values fs) ->
+      inis   = map (fun fd => mkInitializer (fdname fd) (fdname fd)) (values fs) ->
+      K = mkConstructor C (cargs ++ dargs) dnames inis ->
+      ClassOk CD.
+      
 
 End TYPING.
 
@@ -96,5 +95,3 @@ Notation "CT ';' G '|--' e '::' C" := (ExpHasType CT G e C)(at level 58, e at ne
 
 Hint Constructors StupidWarning.
 Hint Constructors ExpHasType.
-
-

@@ -40,10 +40,10 @@ Section WF.
     WFClass : forall C D fs K ms CD DD,
       M.MapsTo C CD CT ->
       M.MapsTo D DD CT -> 
-      Forall WellFormedField fs ->
+      Forall WellFormedField (values fs) ->
       WellFormedConstructor K ->
-      Forall WellFormedMethod ms ->
-      WellFormedClass (mkClassDecl C D (to_map fs) K (to_map ms)).
+      Forall WellFormedMethod (values ms) ->
+      WellFormedClass (mkClassDecl C D fs K ms).
 End WF.
 
   Hint Constructors

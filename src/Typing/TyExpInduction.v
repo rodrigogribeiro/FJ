@@ -8,7 +8,7 @@ Require Import
 (* custom induction principle for ExpHasType *)
 
 Section INDUCTION.
-
+(*
   Definition TyExpInd :=
        fun (CT : ClassTable)   
            (G : Gamma)
@@ -82,5 +82,5 @@ Section INDUCTION.
     | T_DCast _ _ e C D n He Hsub Hneq => f4 e C D n He (F e D He) Hsub Hneq
     | T_SCast _ _ e D C n m He Hnsub Hmsub Hst => f5 e D C n m He (F e D He) Hnsub Hmsub Hst
     end.  
-  
+  *)
 End INDUCTION.

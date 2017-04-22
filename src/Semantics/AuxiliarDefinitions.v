@@ -70,22 +70,13 @@ Section Definitions.
 
   Hint Constructors valid_override.
 
-  Record Entry := mkEntry {
-     ename : Name ;
-     eexp  : Exp ;
-  }.   
-
-  Instance NameEntry : Nameable Entry := {
-     get_name := ename ;                                     
-  }.
-
   (* substitution *)
 
-  Fixpoint subst1 (e : Exp)(m : list Entry) : Exp :=
+  Fixpoint subst1 (e : Exp)(m : Map Exp) : Exp :=
     match e with
-    | EVar v => match find v m with
+    | EVar v => match MapsToDec v m with
                 | !! => e
-                | [|| e' ||] => eexp e'
+                | [|| e' ||] => e'
                 end
     | EFieldAccess e f => EFieldAccess (subst1 e m) f
     | EMethodInvoc e n es =>
@@ -95,7 +86,7 @@ Section Definitions.
     end.  
 
   Definition substitution (e : Exp)(es : list Exp)(vs : list Name) :=
-    subst1 e (zipWith mkEntry vs es).
+    subst1 e (P.of_list (combine vs es)).
 End Definitions.  
 
 Hint Constructors fields m_type_lookup m_body_lookup.

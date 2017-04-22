@@ -8,93 +8,42 @@ Require Import
 
 (* Class table *)
 
-
-Definition ClassTableFiniteMap (CT : ClassTable)
-  := forall CD CD1, In CD CT -> In CD1 CT -> get_name CD = get_name CD1 -> CD = CD1.
                 
 Definition ObjectNotInCT (CT : ClassTable)
-  := forall CD, get_name CD = Object -> ~ In CD CT.
+  := ~ M.In Object CT.
 
 Definition SubtypeAntisymmetric (CT : ClassTable)
-  := antisymmetric _ (Subtype CT).
+  := forall C D, M.In C CT -> M.In D CT ->
+                 CT |= C <: D -> CT |= D <: C -> C = D.
+
+Axiom SubtypeAntisymmetricDec : forall CT, {SubtypeAntisymmetric CT} + {~ SubtypeAntisymmetric CT}.
 
 (* Sanity definition *)
 
-Record ClassTableSanity
-  := mkClassTableSanity {
-         CT : ClassTable ;
-         object_not_in_CT : ObjectNotInCT CT ;
-         subtype_is_antisymmetric : SubtypeAntisymmetric CT ;
-         wellformed : Forall (WellFormedClass CT) CT
-       }.
+Definition ClassTableSanity (CT : ClassTable) :=
+  ObjectNotInCT CT /\
+  SubtypeAntisymmetric CT /\
+  Forall (WellFormedClass CT) (values CT).
 
-Axiom eq_class_dec : forall (C D : ClassDecl), {C = D} + {C <> D}.
-  
-Definition ClassTableFiniteMapDec
-  : forall CT, {ClassTableFiniteMap CT} + {~ ClassTableFiniteMap CT}.
-  refine (fix F CT : {ClassTableFiniteMap CT} + {~ ClassTableFiniteMap CT} :=
-            match CT as CT1
-                  return CT = CT1 -> {ClassTableFiniteMap CT1} + {~ ClassTableFiniteMap CT1} with
-            | nil => fun _ => Yes
-            | x :: xs => fun _ => 
-              match find (get_name x) xs with
-              | !! =>
-                match F xs with
-                | Yes => Yes
-                | No  => No           
-                end
-              | [|| CD ||] =>
-                match eq_class_dec x CD with
-                | Yes =>
-                  match F xs with
-                  | Yes => Yes
-                  | No  => No           
-                  end
-                | No  => No         
-                end
-              end  
-            end (eq_refl CT)) ; clear F ; unfold ClassTableFiniteMap in * ; substs*.
+Hint Unfold ObjectNotInCT ClassTableSanity.
+
+Definition ClassTableSanityDec
+  : forall (CT : ClassTable), {ClassTableSanity CT} + {~ ClassTableSanity CT}.
+  intro CT.
+  destruct* (F.In_dec CT Object).
   +
-    intros ; simpl in * ; contradiction.
+    right ; unfold ClassTableSanity.
+    intro H. destruct* H.
   +
-    intros ; destruct* a.
-    simpl in *.
-    destruct* H. substs.
-    destruct* H0. destruct* H0.
-    substs.
-    apply c ; eauto.
-  +
-    intro H. simpl in *.
-    apply n. intros.
-    apply H. right*. right*. auto.
-  +
-    destruct* a.
-    intro.
-    assert (In x (x :: xs)).
-    simpl ; auto.
-    assert (In CD (x :: xs)).
-    simpl ; right*.
-    apply (H1 _ _ H2 H3) in H.
-    contradiction.
-  +
-    intros.
-    destruct* H.
-    substs.
-    destruct* H0.
-    apply n in H.
-    contradiction.
-    simpl in *.
-    destruct* H0.
-    substs.
-    apply n in H.
-    crush.
-  +
-    intro.
-    apply n0 ; intros.
-    apply H.
-    simpl in *.
-    right*.
-    simpl in *.
-    right*.
-    auto.
-Defined.    
+    destruct (SubtypeAntisymmetricDec CT).
+    *
+      destruct (Forall_dec (WellFormedClassDec CT) (values CT)).
+      -
+        left ; unfold ClassTableSanity ; jauto.
+      -
+        right ; unfold ClassTableSanity.
+        intro H. destruct* H as [H1 [H2 H3]].
+    *
+        right ; unfold ClassTableSanity.
+        intro H. destruct* H as [H1 [H2 H3]].
+Defined.          
