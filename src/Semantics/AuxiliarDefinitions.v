@@ -25,48 +25,67 @@ Section Definitions.
     
   (* method type lookup *)
 
-  Inductive m_type_lookup : nat -> Name -> ClassName -> list ClassName -> ClassName -> Prop :=
-  | mty_base : forall C C' CD ms M MD args Cs n,
+  Record MethodType
+    := mkMethodType {
+           mtparams : list ClassName ;
+           mttype   : ClassName
+         }.
+
+  Definition eq_MethodType_dec : forall (mt mt' : MethodType), {mt = mt'} + {mt <> mt'}.
+    repeat decide equality.
+  Defined.
+  
+  Inductive m_type_lookup : nat -> Name -> ClassName -> MethodType -> Prop :=
+  | mty_base : forall C C' CD ms M MD args Cs n mt,
       M.MapsTo C CD CT                               ->
       ms = cmethods CD                               ->
       M.MapsTo M MD ms                               ->
       args = margs MD                                ->
       Cs = map ftype args                            ->
       C' = mtype MD                                  ->
-      m_type_lookup n M C Cs C'
-  | mty_step : forall C C' CD D M Cs n,
+      mt = mkMethodType Cs C'                        ->
+      m_type_lookup n M C mt
+  | mty_step : forall C CD D M n mt,
       M.MapsTo C CD CT                             ->
       ~ M.In M (cmethods CD)                       ->
       D = cextends CD                              ->
-      m_type_lookup n M D Cs C'                    ->
-      m_type_lookup (1 + n) M C Cs C'.
+      m_type_lookup n M D mt                    ->
+      m_type_lookup (1 + n) M C mt.
 
   (* method body lookup *)
 
-  Inductive m_body_lookup : nat -> Name -> ClassName -> list ClassName -> Exp -> Prop :=
-  | mbody_base : forall C CD MD ms M args body ns n,
+  Record MethodBody
+    := mkMethodBody {
+           mbnames : list Name ;
+           mbexp   : Exp
+       }.
+
+  Inductive m_body_lookup : nat -> Name -> ClassName -> MethodBody -> Prop :=
+  | mbody_base : forall C CD MD ms M args body ns n mb,
       M.MapsTo C CD CT                               ->
       ms = cmethods CD                               ->
       M.MapsTo M MD ms                               ->
       args = margs MD                                ->
       ns = map ftype args                            ->
       body = mbody MD                                ->
-      m_body_lookup n M C ns body
-  | mbody_step : forall C CD D ms M ns body n,
+      mb = mkMethodBody ns body    ->
+      m_body_lookup n M C mb
+  | mbody_step : forall C CD D ms M n mb,
       M.MapsTo C CD CT                              ->
       ms = cmethods CD                              ->
       D = cextends CD                               ->
       ~ M.In M ms                                   ->
-      m_body_lookup n M D ns body                   ->
-      m_body_lookup (1 + n) M C ns body.                    
+      m_body_lookup n M D mb                   ->
+      m_body_lookup (1 + n) M C mb.                    
 
   Hint Constructors m_body_lookup.
 
   (* valid method overriding *)
 
-  Inductive valid_override : Name -> ClassName -> list ClassName -> ClassName -> Prop :=
-  | override_ok : forall  M C C0 Cs Ds D0 n,
-      m_type_lookup n M C Ds D0 -> Cs = Ds -> C0 = D0 -> valid_override M C Cs C0.
+  Inductive valid_override : nat -> Name -> ClassName -> MethodType -> Prop :=
+  | override_ok : forall  M C mt mt1 n,
+      m_type_lookup n M C mt ->
+      mt = mt1 -> valid_override n M C mt1.
 
   Hint Constructors valid_override.
 
@@ -89,7 +108,7 @@ Section Definitions.
     subst1 e (P.of_list (combine vs es)).
 End Definitions.  
 
-Hint Constructors fields m_type_lookup m_body_lookup.
+Hint Constructors fields m_type_lookup m_body_lookup valid_override.
 
 Notation " '[|' ds '\' xs '|]' e " := (substitution e ds xs) (at level 30).
 
@@ -136,29 +155,28 @@ Section DEC.
   Defined.
 
   Lemma m_type_lookupDeterministic :
-    forall CT n M C Cs C', m_type_lookup CT n M C Cs C' ->
-    forall Cs1 C1', m_type_lookup CT n M C Cs1 C1' -> Cs = Cs1 /\ C' = C1'.
+    forall CT n M C mt, m_type_lookup CT n M C mt ->
+    forall mt1, m_type_lookup CT n M C mt1 -> mt = mt1.
   Proof.
-    induction n ; intros M C Cs C' H Cs1 C1' H1 ;
+    induction n ; intros M C mt H mt1 H1 ;
       inverts* H ; inverts* H1 ; try map_solver ; jauto.
-    eapply IHn ; eauto.
   Qed.
 
   Definition m_type_lookupDec
-    : forall n CT C M, {p | exists Cs C', m_type_lookup CT n M C Cs C' /\ p = (Cs , C')} +
-                       {forall Cs C', ~ m_type_lookup CT n M C Cs C'}.
-    refine (fix F n CT C M : {p | exists Cs C', m_type_lookup CT n M C Cs C' /\ p = (Cs , C')} +
-                             {forall Cs C', ~ m_type_lookup CT n M C Cs C'} :=
+    : forall n CT C M, {mt | m_type_lookup CT n M C mt} +
+                       {forall mt, ~ m_type_lookup CT n M C mt}.
+    refine (fix F n CT C M : {mt | m_type_lookup CT n M C mt} +
+                             {forall mt, ~ m_type_lookup CT n M C mt} :=
               match n as n' return  n = n' ->
-                              {p | exists Cs C', m_type_lookup CT n M C Cs C' /\ p = (Cs , C')} +
-                              {forall Cs C', ~ m_type_lookup CT n M C Cs C'} with
+                              {mt | m_type_lookup CT n M C mt} +
+                              {forall mt, ~ m_type_lookup CT n M C mt} with
               | O => fun _ =>
                  match MapsToDec C CT with
                  | !! => !!
                  | [|| CD ||] =>
                    match MapsToDec M (cmethods CD) with
                    | !! => !!
-                   | [|| MD ||] => [|| (map ftype (margs MD) , mtype MD) ||]
+                   | [|| MD ||] => [|| mkMethodType (map ftype (margs MD)) (mtype MD) ||]
                    end
                  end        
               | S n1 => fun _ =>
@@ -171,7 +189,7 @@ Section DEC.
                      | !! => !!
                      | [|| p ||] => [|| p ||]          
                      end
-                   | [|| MD ||] => [|| (map ftype (margs MD) , mtype MD) ||]   
+                   | [|| MD ||] => [|| mkMethodType (map ftype (margs MD)) (mtype MD) ||]   
                    end
                  end          
               end (eq_refl n)) ; clear F ; simpl in * ; substs* ;
@@ -180,32 +198,31 @@ Section DEC.
   Defined.
   
   Lemma m_body_lookupDeterministic
-    : forall n CT M C Cs e,
-      m_body_lookup CT n M C Cs e ->
-      forall Cs1 e1,
-        m_body_lookup CT n M C Cs1 e1 ->
-        Cs = Cs1 /\ e = e1.
+    : forall n CT M C mb,
+      m_body_lookup CT n M C mb ->
+      forall mb1,
+        m_body_lookup CT n M C mb1 ->
+        mb = mb1.
   Proof.
-    induction n ; intros CT M C Cs e H Cs1 e1 H1
+    induction n ; intros CT M C mb H mb1 H1
     ; inverts* H ; inverts* H1 ; try map_solver ; jauto.
-    eapply IHn ; eauto.
   Qed.
 
   Definition m_body_lookupDec
-    : forall n CT M C, {p | exists Cs e, m_body_lookup CT n M C Cs e /\ p = (Cs , e)} +
-                       {forall Cs e, ~ m_body_lookup CT n M C Cs e}.
-    refine (fix F n CT M C : {p | exists Cs e, m_body_lookup CT n M C Cs e /\ p = (Cs , e)} +
-                             {forall Cs e, ~ m_body_lookup CT n M C Cs e} :=
+    : forall n CT M C, {mb | m_body_lookup CT n M C mb} +
+                       {forall mb, ~ m_body_lookup CT n M C mb}.
+    refine (fix F n CT M C : {mb | m_body_lookup CT n M C mb} +
+                             {forall mb, ~ m_body_lookup CT n M C mb} :=
          match n as n'
-              return n = n' -> {p | exists Cs e, m_body_lookup CT n M C Cs e /\ p = (Cs , e)} +
-                               {forall Cs e, ~ m_body_lookup CT n M C Cs e} with
+              return n = n' -> {mb | m_body_lookup CT n M C mb} +
+                               {forall mb, ~ m_body_lookup CT n M C mb} with
          | 0 => fun _ =>
              match MapsToDec C CT with
              | !! => !!
              | [|| CD ||] =>
                match MapsToDec M (cmethods CD) with
                | !! => !!
-               | [|| MD ||] => [|| (map ftype (margs MD) , mbody MD) ||]
+               | [|| MD ||] => [|| mkMethodBody (map ftype (margs MD)) (mbody MD) ||]
                end
              end    
          | S n1 => fun _ =>
@@ -218,12 +235,26 @@ Section DEC.
                  | !! => !!
                  | [|| p ||] => [|| p ||]          
                  end
-               | [|| MD ||] => [|| (map ftype (margs MD) , mbody MD) ||]   
+               | [|| MD ||] => [|| mkMethodBody (map ftype (margs MD)) (mbody MD) ||]   
                end
              end                 
          end (eq_refl n)) ; clear F ; simpl in * ; substs* ;
       try (intros ; intro H ; inverts* H) ; try map_solver.
       apply n2 in H5 ; auto.
+  Defined.
+  
+  Definition valid_overrideDec : forall CT n M C mt, {valid_override CT n M C mt} +
+                                                     {~ valid_override CT n M C mt}.
+    refine (fun CT n M C mt =>
+              match m_type_lookupDec n CT C M with
+              | !! => No
+              | [|| mt1 ||] =>
+                match eq_MethodType_dec mt mt1 with
+                | Yes => Yes
+                | No  => No           
+                end
+             end) ; simpl in * ; substs ; eauto ; try (intro H ; inverts H ; crush) ; eauto.
+    apply (m_type_lookupDeterministic _ _ _ _ _ m _) in H0 ; crush.
  Defined.   
 End DEC.
 

@@ -27,12 +27,12 @@ Section TYPING.
       fields CT n C fs  ->
       M.MapsTo fi fd fs ->
       G |-- (EFieldAccess e fi) :: (fdtype fd)
-  | T_Invoc : forall e C Cs C0 Ds es m n,
+  | T_Invoc : forall e C0 Ds es m n mt,
       G |-- e :: C0 ->
-      m_type_lookup CT n m C0 Ds C ->
-      Forall2 (ExpHasType G) es Cs ->
-      Forall2 (Subtype CT) Cs Ds ->
-      G |-- EMethodInvoc e m es :: C
+      m_type_lookup CT n m C0 mt ->
+      Forall2 (ExpHasType G) es Ds ->
+      Forall2 (Subtype CT) Ds (mtparams mt) ->
+      G |-- EMethodInvoc e m es :: (mttype mt)
   | T_New : forall C Ds Cs fs es n,
       fields CT n C fs ->
       Ds = map fdtype (values fs) ->
@@ -63,14 +63,12 @@ Section TYPING.
 
   Inductive MethodOk : ClassName -> Method -> Prop :=
   | T_Method
-    : forall CD C C0 E0 e0 MD m Cs fargs,
+    : forall CD C E0 MD n,
       M.MapsTo C CD CT ->
-      M.MapsTo m MD (cmethods CD) ->      
-      fargs = margs MD ->
-      map ftype fargs = Cs ->       
-      mkGamma ((mkFormalArg this C) :: fargs) |-- e0 :: E0 ->
-      Subtype CT E0 C0 ->
-      valid_override CT m (cextends CD) Cs C0 ->      
+      mkGamma ((mkFormalArg this C) :: (margs MD)) |-- (mbody MD) :: E0 ->
+      Subtype CT E0 (mtype MD) ->
+      valid_override CT n (mname MD) (cextends CD)
+                     (mkMethodType (map ftype (margs MD)) (mtype MD)) -> 
       MethodOk C MD.
 
   (* class typing *)
@@ -96,3 +94,4 @@ Notation "CT ';' G '|--' e '::' C" := (ExpHasType CT G e C)(at level 58, e at ne
 
 Hint Constructors StupidWarning.
 Hint Constructors ExpHasType.
+Hint Constructors MethodOk.

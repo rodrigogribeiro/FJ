@@ -23,3 +23,6 @@ src/Typing/ClassTable.v
 src/Typing/Wellformedness.v
 src/Typing/Wellformedness/WellformedExp.v
 src/Typing/Wellformedness/WellformedDecls.v
+src/Typechecker/ExpTypechecker.v
+src/Typechecker/MethodTypechecker.v
+src/Typechecker/ClassTypechecker.v

@@ -123,7 +123,10 @@ VFILES:=src/Base/Name.v\
   src/Typing/ClassTable.v\
   src/Typing/Wellformedness.v\
   src/Typing/Wellformedness/WellformedExp.v\
-  src/Typing/Wellformedness/WellformedDecls.v
+  src/Typing/Wellformedness/WellformedDecls.v\
+  src/Typechecker/ExpTypechecker.v\
+  src/Typechecker/MethodTypechecker.v\
+  src/Typechecker/ClassTypechecker.v
 
 ifneq ($(filter-out archclean clean cleanall printenv,$(MAKECMDGOALS)),)
 -include $(addsuffix .d,$(VFILES))

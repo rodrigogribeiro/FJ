@@ -26,8 +26,9 @@ Section SEMANTICS.
       nth_error (values fs) i = Some fi ->
       nth_error es i = Some ei ->
       EFieldAccess (ENew C es) (get_name fi) ~~> ei
-  | XInvoc : forall C m xs ds es e n,
-      m_body_lookup CT n m C xs e   ->
+  | XInvoc : forall C m xs ds es e n mb,
+      m_body_lookup CT n m C mb   ->
+      xs = mbnames mb ->
       NoDup (this :: xs)          ->
       List.length ds = List.length xs ->
       EMethodInvoc (ENew C es) m ds ~~> [| ENew C es :: ds \ this :: xs |] e
