@@ -8,87 +8,87 @@ Require Import
 Set Implicit Arguments.
 
 Definition ExpHasTypeDec
-  : forall (n : nat) CT G e, {{ C | CT ; G |-- e :: C}}.
-  refine (fix ExpHasTypeDec n CT G e : {{C | CT ; G |-- e :: C}} :=
+  : forall (n : nat) CT G e, {C | CT ; G |-- e :: C} + {True} .
+  refine (fix ExpHasTypeDec n CT G e : {C | CT ; G |-- e :: C} + {True} :=
             match e as e'
-                  return e = e' -> {{C | CT ; G |-- e :: C}} with
+                  return e = e' -> {C | CT ; G |-- e :: C} + {True} with
             | EVar v => fun _ =>
                match MapsToDec v G with
-               | !! => ??
-               | [|| t ||] => Found _ t _
+               | !! => !!
+               | [|| t ||] => [|| t ||]
                end          
             | EFieldAccess e v => fun _ =>
                match ExpHasTypeDec n CT G e with
-               | Found _ C _ =>
+               | [|| C ||] =>
                  match fieldsDec n CT C with
-                 | !! => ??
+                 | !! => !!
                  | [|| fds ||] =>
                    match MapsToDec v fds with
-                   | !! => ??
-                   | [|| ft ||] => Found _ (fdtype ft) _
+                   | !! => !!
+                   | [|| ft ||] => [|| (fdtype ft) ||]
                    end
                  end
-               | ?? => ??
+               | !! => !!
                end                      
             | EMethodInvoc e m es => fun _ =>
                match ExpHasTypeDec n CT G e with
-               | ?? => ??
-               | Found _ C _ =>
+               | !! => !!
+               | [|| C ||] =>
                  match m_type_lookupDec n CT C m with
-                 | !! => ??
+                 | !! => !!
                  | [|| p ||] =>
                      match eq_nat_dec (length es) (length (mtparams p)) with
                      | Yes =>
-                       match Forall_partial (ExpHasTypeDec n CT G) es with
-                       | ?? => ??
-                       | Found _ Ds _ =>
+                       match Forall2_partial (ExpHasTypeDec n CT G) es with
+                       | !! => !!
+                       | [|| Ds ||] =>
                          match eq_nat_dec (length Ds) (length (mtparams p)) with
                          | Yes =>
                            match Forall2_dec (BoundedSubtypeDec CT n) Ds (mtparams p) _ with
-                           | Yes => Found _ (mttype p) _
-                           | No => ??           
+                           | Yes => [|| (mttype p) ||]
+                           | No => !!           
                            end
-                         | No  => ??  
+                         | No  => !! 
                          end
                        end  
-                     | No  => ??            
+                     | No  => !!            
                    end
                  end
                end                        
             | ECast C e => fun _ =>
                match ExpHasTypeDec n CT G e with
-               | ?? => ??
-               | Found _ D _ =>
+               | !! => !!
+               | [|| D ||] =>
                  match BoundedSubtypeDec CT n D C with
-                 | Yes => Found _ C _
+                 | Yes => [|| C ||]
                  | No  =>
                    match BoundedSubtypeDec CT n C D with
                    | Yes =>
                      match eq_nat_dec C D with
-                     | Yes => Found _ C _
-                     | No  => Found _ C _               
+                     | Yes => [|| C ||]
+                     | No  => [|| C ||]
                      end  
-                   | No  => Found _ C _  
+                   | No  => [|| C ||]  
                    end
                  end  
                end                
             | ENew C es => fun _ =>
                match fieldsDec n CT C with
-               | !! => ??
+               | !! => !!
                | [|| fs ||] =>
                  match eq_nat_dec (length es) (length (values fs)) with
-                 | No => ??
+                 | No => !!
                  | Yes =>
-                   match Forall_partial (ExpHasTypeDec n CT G) es with
-                   | ?? => ??
-                   | Found _ Ds _ =>
+                   match Forall2_partial (ExpHasTypeDec n CT G) es with
+                   | !! => !!
+                   | [|| Ds ||] =>
                      match eq_nat_dec (length Ds) (length (map fdtype (values fs))) with
-                     | No => ??
+                     | No => !!
                      | Yes =>
                        match Forall2_dec (BoundedSubtypeDec CT n) Ds
                                          (map fdtype (values fs)) _ with
-                       | Yes => Found _ C _
-                       | No  => ??           
+                       | Yes => [|| C ||]
+                       | No  => !!           
                        end
                      end
                    end

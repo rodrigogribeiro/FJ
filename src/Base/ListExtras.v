@@ -27,7 +27,7 @@ Fixpoint zipWith {A B C : Type}(f : A -> B -> C)(xs : list A)(ys : list B) : lis
   | x :: xs , y :: ys => f x y :: zipWith f xs ys                
   end.  
 
-Definition Forall_partial
+Definition Forall2_partial
            {A B : Set}{P : A -> B -> Prop}
            (Pdec : forall (x : A), {{y | P x y}})
   : forall xs, {{ys | Forall2 P xs ys}}.
@@ -53,7 +53,6 @@ Definition Forall2_dec {A B : Type}{P : A -> B -> Prop}(Pdec : forall x y, {P x 
   right ; intro Hx ; inverts* Hx.
   right ; intro Hx ; inverts* Hx.
 Defined.  
-
 
 (* decidable equality test for lists *)
 

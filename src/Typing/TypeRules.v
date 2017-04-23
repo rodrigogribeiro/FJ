@@ -75,16 +75,11 @@ Section TYPING.
 
   Inductive ClassOk : ClassDecl -> Prop :=
   | T_Class
-    : forall C CD D n dfds ms K dargs cargs inis dnames fs,
+    : forall C CD D n dfds ms K fs,
       M.MapsTo C CD CT ->
       CD = mkClassDecl C D fs K ms ->
       fields CT n D dfds ->
       Forall (MethodOk C) (values ms) ->
-      dnames = map fdname (values dfds) ->
-      dargs  = map (fun fd => mkFormalArg (fdname fd) (fdtype fd)) (values dfds) ->
-      cargs  = map (fun fd => mkFormalArg (fdname fd) (fdtype fd)) (values fs) ->
-      inis   = map (fun fd => mkInitializer (fdname fd) (fdname fd)) (values fs) ->
-      K = mkConstructor C (cargs ++ dargs) dnames inis ->
       ClassOk CD.
       
 

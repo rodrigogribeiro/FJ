@@ -30,7 +30,7 @@ Notation "e1 ;;; e2" := (if e1 then e2 else !!)
 
 (* partial subset types *)
 
-Inductive Maybe (A : Set) (P : A -> Prop) : Set :=
+Inductive Maybe (A : Type) (P : A -> Type) : Type :=
 | Unknown : Maybe P
 | Found : forall x : A, P x -> Maybe P.
 
