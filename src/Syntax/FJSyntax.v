@@ -78,7 +78,7 @@ Instance MethodName : Nameable Method :={
 
 
 (* class declarations *)
-Polymorphic
+
 Record ClassDecl := mkClassDecl {
    cname         : Name ;                  
    cextends      : ClassName ;

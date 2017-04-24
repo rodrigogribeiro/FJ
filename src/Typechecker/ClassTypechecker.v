@@ -5,7 +5,7 @@ Require Import
         FJ.Typing
         FJ.Tactics
         FJ.Typechecker.MethodTypechecker.
-
+(*
 Definition ClassOkDec : forall (n : nat) CT (C : ClassName), {{CD | ClassOk CT CD}}.
   refine (fun n CT C =>
             match MapsToDec C CT with
@@ -21,3 +21,4 @@ Definition ClassOkDec : forall (n : nat) CT (C : ClassName), {{CD | ClassOk CT C
               end    
             end) ; simpl in *.
   eapply T_Class with (ms := cmethods CD) ; eauto.
+*)
